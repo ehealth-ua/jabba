@@ -4,12 +4,11 @@ defmodule Core.Factory do
   use ExMachina.Ecto, repo: Core.Repo
 
   alias Core.Job
-  alias Ecto.UUID
 
   def job_factory do
     %Job{
       type: "test",
-      callback: :erlang.term_to_binary({"test", TestRpc, :run, []}),
+      callback: {"test", TestRpc, :run, []},
       meta: %{},
       status: Job.status(:pending)
     }

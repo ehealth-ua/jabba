@@ -9,9 +9,9 @@ defmodule Core.Kafka.Producer do
   @topic "jobs"
   @partition 0
 
-  def publish_job(event) when is_binary(event) do
-    with :ok <- Producer.produce_sync(@topic, @partition, "", event) do
-      Logger.info("Published event #{inspect(event)} to kafka")
+  def publish_job(job_id) when is_binary(job_id) do
+    with :ok <- Producer.produce_sync(@topic, @partition, "", job_id) do
+      Logger.debug(fn -> "Published job with id #{job_id} to kafka" end)
       :ok
     end
   end

@@ -3,8 +3,8 @@ defmodule Core.Job do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ecto.UUID
   alias Core.Ecto.RpcCallback
+  alias Ecto.UUID
 
   @status_pending "PENDING"
   @status_consumed "CONSUMED"

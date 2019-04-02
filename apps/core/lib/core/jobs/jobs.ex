@@ -4,7 +4,6 @@ defmodule Core.Jobs do
   alias Core.Job
   alias Core.Repo
 
-  @status_pending Job.status(:pending)
   @status_consumed Job.status(:consumed)
   @status_processed Job.status(:processed)
   @status_failed Job.status(:failed)
@@ -24,15 +23,30 @@ defmodule Core.Jobs do
     |> Repo.update()
   end
 
-  def processed(job, result) do
-    update(job, result: result, status: @status_processed)
+  def consumed(job), do: update(job, %{status: @status_consumed})
+
+  def processed(job, result) when is_map(result) do
+    update(job, %{
+      result: result,
+      status: @status_processed
+    })
   end
 
-  def failed(job, result) do
-    update(job, result: result, status: @status_failed)
+  def processed(job, result), do: processed(job, %{success: inspect(result)})
+
+  def failed(job, result) when is_map(result) do
+    update(job, %{
+      result: result,
+      status: @status_failed
+    })
   end
+
+  def failed(job, result), do: failed(job, %{error: inspect(result)})
 
   def rescued(job, result) do
-    update(job, result: Jason.encode(inspect(result)), status: @status_rescued)
+    update(job, %{
+      result: %{error: inspect(result)},
+      status: @status_rescued
+    })
   end
 end

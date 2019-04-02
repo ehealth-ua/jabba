@@ -12,7 +12,7 @@ config :core,
     endpoints: [localhost: 9092],
     topics: ["jobs"],
     consumer_group: "jobs_group",
-    message_handler: Core.Jabba
+    message_handler: Jabba
   ]
 
 config :core,

@@ -23,7 +23,8 @@ defmodule Core.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {Core.Application, []}
     ]
   end
 
@@ -35,15 +36,16 @@ defmodule Core.MixProject do
     [
       {:confex_config_provider, "~> 0.1.0"},
       {:confex, "~> 3.4"},
-      {:ecto, "~> 3.0"},
-      {:ecto_sql, "~> 3.0"},
+      {:ecto, "~> 3.1"},
+      {:ecto_sql, "~> 3.1"},
       {:jason, "~> 1.1"},
       {:kaffe, "~> 1.11"},
       {:kube_rpc, "~> 0.1.0"},
       {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
+      {:postgrex, ">= 0.0.0"},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:ex_machina, "~> 2.3", only: [:dev, :test]},
-      {:mox, "~> 0.4.0", only: [:test]}
+      {:mox, "~> 0.4", only: [:test]}
     ]
   end
 

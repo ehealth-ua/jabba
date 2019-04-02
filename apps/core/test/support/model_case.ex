@@ -16,14 +16,14 @@ defmodule Core.ModelCase do
 
   using do
     quote do
-      alias Core.Repo
-
-      # import Core.Factory
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
+      import Core.Factory
       import Core.ModelCase
       import Mox
+
+      alias Core.Repo
     end
   end
 

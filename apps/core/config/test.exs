@@ -8,11 +8,15 @@ config :ex_unit, capture_log: true
 # Print only warnings and errors during test
 config :logger, level: :warn
 
-config :core, repos: [read_only_repo: Core.Repo]
+config :core,
+  ecto_repos: [Core.Repo],
+  rpc_worker: RPCWorkerMock,
+  kafka: [
+    producer: KafkaMock
+  ]
 
 # Configure your database
 config :core, Core.Repo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: "jabba_test",

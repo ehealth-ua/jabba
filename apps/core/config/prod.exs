@@ -8,3 +8,9 @@ config :core, Core.Repo,
   port: {:system, :integer, "DB_PORT"},
   pool_size: {:system, :integer, "POOL_SIZE", 10},
   timeout: :infinity
+
+config :kaffe,
+  producer: [
+    endpoints: {:system, :string, "KAFKA_BROKERS"},
+    topics: ["jobs"]
+  ]

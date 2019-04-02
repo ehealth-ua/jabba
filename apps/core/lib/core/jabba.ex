@@ -62,11 +62,10 @@ defmodule Jabba do
   end
 
   def handle_messages(messages) do
-    for %{offset: offset, value: message} <- messages do
-      value = :erlang.binary_to_term(message)
-      Logger.debug(fn -> "message: " <> inspect(value) end)
+    for %{offset: offset, value: job_id} <- messages do
+      Logger.debug(fn -> "job id: " <> inspect(job_id) end)
       Logger.debug(fn -> "offset: #{offset}" end)
-      :ok = consume(value)
+      :ok = consume(job_id)
     end
 
     # Important!

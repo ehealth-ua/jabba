@@ -15,6 +15,12 @@ config :core,
     message_handler: Jabba
   ]
 
+config :kaffe,
+  producer: [
+    endpoints: [localhost: 9092],
+    topics: ["jobs"]
+  ]
+
 config :core,
   topologies: [
     k8s_il: [

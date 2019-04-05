@@ -2,12 +2,14 @@ defmodule Jabba.MixProject do
   use Mix.Project
 
   @version "0.1.0"
+
   def project do
     [
       version: @version,
       apps_path: "apps",
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [coveralls: :test, "coveralls.html": :test],
       deps: deps()
     ]
   end

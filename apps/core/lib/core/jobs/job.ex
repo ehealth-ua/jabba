@@ -3,7 +3,7 @@ defmodule Core.Job do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Core.Ecto.RpcCallback
+  alias Core.Ecto.RPCCallback
   alias Ecto.UUID
 
   @status_pending "PENDING"
@@ -15,7 +15,7 @@ defmodule Core.Job do
   @primary_key {:id, UUID, autogenerate: true}
   schema "jobs" do
     field(:type, :string)
-    field(:callback, RpcCallback)
+    field(:callback, RPCCallback)
     field(:meta, :map)
     field(:status, :string, default: @status_pending)
     field(:result, :map)

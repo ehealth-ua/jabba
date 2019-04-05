@@ -1,4 +1,4 @@
-defmodule Rpc.Application do
+defmodule RPC.Application do
   @moduledoc false
 
   use Application
@@ -6,7 +6,7 @@ defmodule Rpc.Application do
   def start(_type, _args) do
     children = []
 
-    opts = [strategy: :one_for_one, name: Rpc.Supervisor]
+    opts = [strategy: :one_for_one, name: RPC.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end

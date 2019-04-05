@@ -23,12 +23,12 @@ defmodule Jabba do
 
     with {:ok, job} <- create_job(callback, type, opts[:meta]),
          :ok <- @kafka_producer.publish_job(job.id) do
-      {:ok, job.id}
+      {:ok, job}
     end
   end
 
   defp create_job(callback, type, meta) do
-    Jobs.create(%{
+    Jobs.create_job(%{
       callback: callback,
       meta: meta,
       type: type,
@@ -57,7 +57,7 @@ defmodule Jabba do
   end
 
   def consume(value) do
-    Logger.warn(fn -> "unknown kafka message: #{inspect(value)}" end)
+    Logger.warn(fn -> "unknown kafka message: `#{inspect(value)}`" end)
     :ok
   end
 
@@ -90,7 +90,5 @@ defmodule Jabba do
   defp process_rpc_result(job, {:rescued, error}), do: Jobs.rescued(job, error)
   defp process_rpc_result(job, result), do: Jobs.processed(job, result)
 
-  defp options(overrides) do
-    Keyword.merge(@defaults, overrides)
-  end
+  defp options(overrides), do: Keyword.merge(@defaults, overrides)
 end

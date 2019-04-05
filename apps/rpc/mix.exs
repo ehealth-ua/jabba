@@ -1,15 +1,20 @@
-defmodule Rpc.MixProject do
+defmodule RPC.MixProject do
   use Mix.Project
+
+  @version "0.1.0"
 
   def project do
     [
       app: :rpc,
-      version: "0.1.0",
+      version: @version,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.8",
+      compilers: Mix.compilers(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [coveralls: :test, "coveralls.html": :test],
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -18,7 +23,7 @@ defmodule Rpc.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Rpc.Application, []}
+      mod: {RPC.Application, []}
     ]
   end
 

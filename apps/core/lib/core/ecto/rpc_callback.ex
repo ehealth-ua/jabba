@@ -1,4 +1,4 @@
-defmodule Core.Ecto.RpcCallback do
+defmodule Core.Ecto.RPCCallback do
   @moduledoc """
   Defines Ecto type for RPC callback attributes
   """

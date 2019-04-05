@@ -1,0 +1,21 @@
+{
+  "skip_files": [
+    "test/*",
+    "lib/core/application.ex",
+    "lib/core/ecto/query.ex",
+    "lib/core/ecto/rpc_callback.ex",
+    "lib/core/filters/base.ex",
+    "lib/core/kafka/producer.ex",
+    "lib/core/repo.ex"
+  ],
+  "custom_stop_words": [
+    "field",
+    "has_one",
+    "has_many",
+    "embeds_one",
+    "embeds_many",
+    "schema",
+    "send"
+  ],
+  "treat_no_relevant_lines_as_covered": true
+}

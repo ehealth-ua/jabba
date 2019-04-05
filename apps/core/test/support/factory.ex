@@ -8,7 +8,7 @@ defmodule Core.Factory do
   def job_factory do
     %Job{
       type: "test",
-      callback: {"test", TestRpc, :run, []},
+      callback: {"test", TestRPC, :run, []},
       meta: %{},
       status: Job.status(:pending)
     }

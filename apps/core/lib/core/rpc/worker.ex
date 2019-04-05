@@ -1,4 +1,4 @@
-defmodule Core.Rpc.Worker do
+defmodule Core.RPC.Worker do
   @moduledoc false
 
   use KubeRPC.Client, :core

@@ -4,7 +4,7 @@ config :core,
   env: Mix.env(),
   namespace: Core,
   ecto_repos: [Core.Repo],
-  rpc_worker: Core.Rpc.Worker,
+  rpc_worker: Core.RPC.Worker,
   kafka: [
     producer: Core.Kafka.Producer
   ],

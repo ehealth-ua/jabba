@@ -1,4 +1,4 @@
-# Rpc
+# RPC
 
 **TODO: Add description**
 

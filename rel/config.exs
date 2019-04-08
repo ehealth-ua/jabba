@@ -20,7 +20,7 @@ release :rpc do
 
   set(
     applications: [
-      ehealth: :permanent
+      rpc: :permanent
     ]
   )
 

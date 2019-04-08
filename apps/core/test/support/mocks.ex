@@ -1,2 +1,2 @@
 Mox.defmock(KafkaMock, for: Core.Kafka.ProducerBehaviour)
-Mox.defmock(RPCWorkerMock, for: KubeRPC.Client.Behaviour)
+Mox.defmock(RPCClientMock, for: KubeRPC.Client.Behaviour)

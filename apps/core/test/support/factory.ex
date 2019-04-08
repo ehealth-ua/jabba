@@ -4,13 +4,25 @@ defmodule Core.Factory do
   use ExMachina.Ecto, repo: Core.Repo
 
   alias Core.Job
+  alias Core.Task
 
   def job_factory do
     %Job{
+      name: sequence(:name, &"job-#{&1}"),
       type: "test",
-      callback: {"test", TestRPC, :run, []},
+      strategy: Job.strategy(:sequentially),
+      status: Job.status(:pending),
       meta: %{},
-      status: Job.status(:pending)
+      ended_at: nil
+    }
+  end
+
+  def task_factory do
+    %Task{
+      callback: {"test", TestRPC, :run, []},
+      status: Job.status(:pending),
+      result: %{},
+      ended_at: nil
     }
   end
 end

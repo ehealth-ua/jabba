@@ -25,16 +25,26 @@ defmodule Jabba.RPC do
   Jobs logic is on the side of the caller
 
   The first argument is the `callback` is being invoked. It is called when message consumed from Kafka.
-  The result of the `callback` must return tuple:
-    * `{:ok, map}` - in case of success
+  The result of the `callback` must return:
+    * `{:ok, map}` or `:ok`  - in case of success
     * `{:error, map}` - in case of error
 
   The second argument defines a job `type` and could be used as a filter for jobs searching
 
   ## Options
 
+  * `:strategy` - job processing strategy. Available: `:sequentially`. Read more in about strategy below
+
   * `:meta` - additional data for the job that stored in database
     and could be used as a filter for jobs searching
+
+  * `:name` - job name that stored in database
+
+  ## Strategies
+
+  * `:sequentially` - Default strategy. Execute each job task step by step.
+    In case of error task and job will be marked as failed.
+    All tasks after failed task will be marked as `ABORTED`
 
   Returns `{:ok, %Job{}` tuple with job that was created
   or `{:error, term}` tuple with error reason
@@ -51,8 +61,9 @@ defmodule Jabba.RPC do
     ...>   ]
     ...> )
     {:ok, %Job{id: "227bed61-5e1b-36c1-a064-5830c8f18131", ...}}
+
   """
-  @spec create_job(Jabba.callback(), binary, list) :: {:ok, job()} | {:error, term}
+  @spec create_job(Jabba.callback() | list(Jabba.callback()), binary, list) :: {:ok, job()} | {:error, term}
   defdelegate create_job(callback, type, opts \\ []), to: Jabba, as: :run
 
   @doc """

@@ -2,16 +2,16 @@ defmodule Core.JabbaTest do
   @moduledoc false
 
   use Core.ModelCase
-  import ExUnit.CaptureLog
+  alias Core.Kafka.TaskProcessor
   alias Core.Job
   alias Core.Jobs
   alias Ecto.UUID
 
   @test_callback {"test", Test, :run, [:some, %{arguments: "for"}, [:callback]]}
 
-  describe "create job" do
+  describe "create job with sequentially process strategy" do
     test "successfully with empty meta" do
-      expect(KafkaMock, :publish_job, fn _ -> :ok end)
+      expect(KafkaMock, :publish_task, fn _ -> :ok end)
 
       assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test")
 
@@ -21,12 +21,14 @@ defmodule Core.JabbaTest do
     end
 
     test "successfully when meta is map" do
-      expect(KafkaMock, :publish_job, fn _ -> :ok end)
+      expect(KafkaMock, :publish_task, fn _ -> :ok end)
       request_id = UUID.generate()
 
-      assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test", meta: %{request_id: request_id})
+      opts = [meta: %{request_id: request_id}, name: "with-meta"]
+      assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test", opts)
 
       assert %Job{} = job = Jobs.get_by(id: id)
+      assert "with-meta" == job.name
       assert "test" == job.type
       assert Job.status(:pending) == job.status
       assert %{"request_id" => request_id} == job.meta
@@ -35,104 +37,74 @@ defmodule Core.JabbaTest do
     test "with invalid meta type" do
       Jabba.run(@test_callback, "test", meta: "invalid type")
     end
-  end
 
-  describe "consume" do
-    test "successfully processed" do
-      expect(RPCWorkerMock, :run, fn basename, module, function, arguments ->
-        assert "test" == basename
+    test "successfully with many tasks and consume" do
+      request_id = UUID.generate()
+      legal_entity_id = UUID.generate()
+
+      expect(KafkaMock, :publish_task, fn task_id ->
+        task = Jobs.get_task_by(id: task_id)
+        assert 1 == task.priority
+        TaskProcessor.consume(task.id)
+        :ok
+      end)
+
+      expect(KafkaMock, :publish_task, fn task_id ->
+        task = Jobs.get_task_by(id: task_id)
+        assert 2 == task.priority
+        TaskProcessor.consume(task.id)
+        :ok
+      end)
+
+      expect(KafkaMock, :publish_task, fn task_id ->
+        task = Jobs.get_task_by(id: task_id)
+        assert 3 == task.priority
+        TaskProcessor.consume(task.id)
+        :ok
+      end)
+
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "ehealth" == basename
         assert Test == module
-        assert :run == function
-        assert [:some, %{arguments: "for"}, [:callback]] == arguments
+        assert :deactivate_division == function
+        assert [{11.2222, 22.3333}] == arguments
 
-        {:ok, {:ok, %{job: :done}}}
+        {:ok, {:ok, :deactivated}}
       end)
 
-      job = insert(:job, callback: @test_callback)
-      assert :ok = Jabba.consume(job.id)
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "mpi" == basename
+        assert Test == module
+        assert :deactivate_employee == function
+        assert [%{legal_entity_id: legal_entity_id}] == arguments
 
-      db_job = Jobs.get_by(id: job.id)
-      assert Job.status(:processed) == db_job.status
-      assert %{"job" => "done"} == db_job.result
-    end
-
-    test "successfully processed with invalid return format" do
-      expect(RPCWorkerMock, :run, fn _, _, _, _ ->
-        {:ok, "not a tuple"}
+        {:ok, {:ok, :deactivated}}
       end)
 
-      job = insert(:job)
-      assert :ok = Jabba.consume(job.id)
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "ops" == basename
+        assert Test == module
+        assert :deactivate_declarations == function
+        assert [[code: "AB2211II"]] == arguments
 
-      db_job = Jobs.get_by(id: job.id)
-      assert Job.status(:processed) == db_job.status
-      assert %{"success" => ~s("not a tuple")} = db_job.result
-    end
-
-    test "invalid id" do
-      assert capture_log(fn ->
-               :ok = Jabba.consume(:not_a_string)
-             end) =~ "unknown kafka message: `:not_a_string`"
-    end
-
-    test "failed because of invalid RPC call" do
-      expect(RPCWorkerMock, :run, fn _, _, _, _ ->
-        {:error, {:bad_rpc, [:pod_not_connected]}}
+        {:ok, :ok}
       end)
 
-      job = insert(:job)
-      assert :ok = Jabba.consume(job.id)
+      opts = [meta: %{request_id: request_id}, name: "with many tasks"]
 
-      db_job = Jobs.get_by(id: job.id)
-      assert Job.status(:failed) == db_job.status
-      assert %{"error" => _} = db_job.result
-    end
+      callback = [
+        {"ehealth", Test, :deactivate_division, [{11.2222, 22.3333}]},
+        {"mpi", Test, :deactivate_employee, [%{legal_entity_id: legal_entity_id}]},
+        {"ops", Test, :deactivate_declarations, [[code: "AB2211II"]]}
+      ]
 
-    test "failed because of result of RPC call" do
-      expect(RPCWorkerMock, :run, fn _, _, _, _ ->
-        {:ok, {:error, %{reason: :not_found}}}
-      end)
+      assert {:ok, %Job{id: id}} = Jabba.run(callback, "deactivate-le", opts)
 
-      job = insert(:job)
-      assert :ok = Jabba.consume(job.id)
-
-      db_job = Jobs.get_by(id: job.id)
-      assert Job.status(:failed) == db_job.status
-      assert %{"reason" => "not_found"} = db_job.result
-    end
-
-    test "do not process Job that was already processed" do
-      job = insert(:job, status: Job.status(:processed))
-
-      assert capture_log(fn ->
-               :ok = Jabba.consume(job.id)
-             end) =~ "Job with id `#{job.id}` has invalid status `#{Job.status(:processed)}`"
-    end
-
-    test "rescued because of RPC error" do
-      expect(RPCWorkerMock, :run, fn _, _, _, _ ->
-        raise "Some error"
-      end)
-
-      job = insert(:job)
-      assert :ok = Jabba.consume(job.id)
-
-      db_job = Jobs.get_by(id: job.id)
-      assert Job.status(:rescued) == db_job.status
-      assert %{"error" => ~s(%RuntimeError{message: "Some error"})} = db_job.result
-    end
-  end
-
-  describe "handle_messages" do
-    test "successfully processed" do
-      expect(RPCWorkerMock, :run, fn _, _, _, _ -> {:ok, {:ok, %{job: :done}}} end)
-
-      job = insert(:job)
-      assert :ok = Jabba.handle_messages([%{offset: 0, value: job.id}])
-
-      db_job = Jobs.get_by(id: job.id)
-      assert Job.status(:processed) == db_job.status
-      assert %{"job" => "done"} == db_job.result
+      assert %Job{} = job = Jobs.get_by(id: id)
+      assert "with many tasks" == job.name
+      assert "deactivate-le" == job.type
+      assert Job.status(:pending) == job.status
+      assert %{"request_id" => request_id} == job.meta
     end
   end
 end

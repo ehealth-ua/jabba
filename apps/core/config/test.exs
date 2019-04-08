@@ -10,7 +10,7 @@ config :logger, level: :warn
 
 config :core,
   ecto_repos: [Core.Repo],
-  rpc_worker: RPCWorkerMock,
+  rpc_client: RPCClientMock,
   kafka: [
     producer: KafkaMock
   ]

@@ -1,18 +1,27 @@
 defmodule Jabba do
-  @moduledoc false
+  @moduledoc """
+  Entry point for Jobs
+  Module that creates and process jobs.
+  """
 
   alias Core.Job
   alias Core.Jobs
+  alias Core.Task
 
   require Logger
 
   @status_pending Job.status(:pending)
+  @status_processed Job.status(:processed)
+  @statuses_failed Task.statuses(:failed)
+
+  @strategy_sequentially Job.strategy(:sequentially)
 
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
-  @rpc_worker Application.get_env(:core, :rpc_worker)
 
   @defaults [
-    meta: nil
+    strategy: @strategy_sequentially,
+    meta: nil,
+    name: nil
   ]
 
   @type callback() :: {binary, atom, atom, list}
@@ -21,74 +30,69 @@ defmodule Jabba do
   def run(callback, type, opts \\ []) when is_list(opts) do
     opts = options(opts)
 
-    with {:ok, job} <- create_job(callback, type, opts[:meta]),
-         :ok <- @kafka_producer.publish_job(job.id) do
+    with {:ok, job} <- create_job(callback, type, opts),
+         :ok <- publish_job_task(job) do
       {:ok, job}
     end
   end
 
-  defp create_job(callback, type, meta) do
+  defp create_job(callback, type, opts) do
     Jobs.create_job(%{
-      callback: callback,
-      meta: meta,
+      name: opts[:name],
       type: type,
-      status: @status_pending
+      meta: opts[:meta],
+      strategy: opts[:strategy],
+      status: @status_pending,
+      tasks: prepare_tasks(callback, opts[:strategy])
     })
   end
 
-  def consume(job_id) when is_binary(job_id) do
-    with %Job{status: @status_pending} = job <- Jobs.get_by(id: job_id),
-         {:ok, %Job{} = job} <- Jobs.consumed(job),
-         result <- call_rpc(job),
-         {_, {:ok, _}} <- {:process_rpc, process_rpc_result(job, result)} do
+  defp prepare_tasks(callback, strategy) when is_tuple(callback), do: prepare_tasks([callback], strategy)
+
+  defp prepare_tasks(callbacks, @strategy_sequentially) when is_list(callbacks) do
+    callbacks
+    |> Enum.map_reduce(1, fn callback, acc ->
+      {%{callback: callback, priority: acc}, acc + 1}
+    end)
+    |> elem(0)
+  end
+
+  defp publish_job_task(%Job{strategy: @strategy_sequentially} = job) do
+    with %{id: id} = task <- Enum.find(job.tasks, fn task -> task.priority == 1 end),
+         {:ok, _} <- Jobs.pending(task),
+         :ok <- @kafka_producer.publish_task(id) do
       :ok
     else
-      %Job{status: status} ->
-        Logger.warn(fn -> "Job with id `#{job_id}` has invalid status `#{status}`" end)
-
       nil ->
-        Logger.warn(fn -> "Job with id `#{job_id}` not found" end)
-
-      {:process_rpc, {:error, error}} ->
-        Logger.warn(fn -> "Job with id `#{job_id}` cannot be processed because of #{error}" end)
-    end
-
-    :ok
-  end
-
-  def consume(value) do
-    Logger.warn(fn -> "unknown kafka message: `#{inspect(value)}`" end)
-    :ok
-  end
-
-  def handle_messages(messages) do
-    for %{offset: offset, value: job_id} <- messages do
-      Logger.debug(fn -> "job id: " <> inspect(job_id) end)
-      Logger.debug(fn -> "offset: #{offset}" end)
-      :ok = consume(job_id)
-    end
-
-    # Important!
-    :ok
-  end
-
-  defp call_rpc(%Job{} = job) do
-    case apply(@rpc_worker, :run, Tuple.to_list(job.callback)) do
-      {:ok, result} ->
-        result
+        Logger.error("Cannot publish task: no tasks with priority 1")
+        :ok
 
       err ->
-        Logger.warn(fn -> "Invalid RPC call with: `#{inspect(err)}`" end)
-        err
+        prepare_error(err)
     end
-  rescue
-    err -> {:rescued, err}
   end
 
-  defp process_rpc_result(job, {:ok, result}), do: Jobs.processed(job, result)
-  defp process_rpc_result(job, {:error, error}), do: Jobs.failed(job, error)
-  defp process_rpc_result(job, {:rescued, error}), do: Jobs.rescued(job, error)
-  defp process_rpc_result(job, result), do: Jobs.processed(job, result)
+  defp prepare_error({:error, reason} = err) do
+    Logger.error("Cannot publish task with: `#{inspect(reason)}`")
+    err
+  end
+
+  defp prepare_error(err), do: prepare_error({:error, err})
+
+  def proceed(%Task{status: @status_processed, job: %Job{strategy: @strategy_sequentially} = job} = task) do
+    case Jobs.get_next_task(job.strategy, job.id, task.priority) do
+      nil ->
+        Jobs.processed(job)
+
+      %Task{} = task ->
+        @kafka_producer.publish_task(task.id)
+        Jobs.pending(task)
+    end
+  end
+
+  def proceed(%Task{status: status, job: %Job{strategy: @strategy_sequentially} = job} = task)
+      when status in @statuses_failed do
+  end
 
   defp options(overrides), do: Keyword.merge(@defaults, overrides)
 end

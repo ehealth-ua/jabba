@@ -6,11 +6,17 @@ defmodule RPCTest do
 
   @test_callback {"test", Test, :run, [:some, %{arguments: "for"}, [:callback]]}
 
-  describe "create job" do
+  describe "create job with sequentially process strategy" do
     test "successfully with empty meta" do
       expect(KafkaMock, :publish_job, fn _ -> :ok end)
 
       {:ok, %Job{}} = RPC.create_job(@test_callback, "test")
+    end
+
+    test "successfully with one task" do
+    end
+
+    test "successfully with many tasks" do
     end
   end
 

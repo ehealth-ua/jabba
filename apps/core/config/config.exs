@@ -4,7 +4,7 @@ config :core,
   env: Mix.env(),
   namespace: Core,
   ecto_repos: [Core.Repo],
-  rpc_worker: Core.RPC.Worker,
+  rpc_client: Core.RPC.Client,
   kafka: [
     producer: Core.Kafka.Producer
   ],
@@ -12,7 +12,7 @@ config :core,
     endpoints: [localhost: 9092],
     topics: ["jobs"],
     consumer_group: "jobs_group",
-    message_handler: Jabba
+    message_handler: Core.Kafka.TaskProcessor
   ]
 
 config :kaffe,

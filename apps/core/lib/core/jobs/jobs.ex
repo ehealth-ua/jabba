@@ -7,18 +7,40 @@ defmodule Core.Jobs do
   alias Core.Filters.Base, as: BaseFilter
   alias Core.Job
   alias Core.Repo
+  alias Core.Task
 
-  @status_consumed Job.status(:consumed)
+  @status_pending Job.status(:pending)
   @status_processed Job.status(:processed)
   @status_failed Job.status(:failed)
   @status_rescued Job.status(:rescued)
+  @status_new Task.status(:new)
+  @status_consumed Task.status(:consumed)
+  @status_aborted Task.status(:aborted)
+
+  @strategy_sequentially Job.strategy(:sequentially)
 
   def get_by(params), do: Repo.get_by(Job, params)
+
+  def get_task_by(params), do: Repo.get_by(Task, params)
+
+  def get_task_by(params, :preload) do
+    Task
+    |> where(^params)
+    |> preload(:job)
+    |> Repo.one()
+  end
 
   def fetch_by(params) do
     case get_by(params) do
       %Job{} = job -> {:ok, job}
       nil -> {:error, {:not_found, "Job not found"}}
+    end
+  end
+
+  def fetch_task_by(params) do
+    case get_task_by(params) do
+      %Task{} = job -> {:ok, job}
+      nil -> {:error, {:not_found, "Task not found"}}
     end
   end
 
@@ -46,28 +68,49 @@ defmodule Core.Jobs do
     |> Repo.update()
   end
 
-  def consumed(job), do: update_job(job, %{status: @status_consumed})
+  def update_task(task, attrs) do
+    task
+    |> Task.changeset(attrs)
+    |> Repo.update()
+  end
 
-  def processed(job, result) when is_map(result) do
-    update_job(job, %{
+  def get_next_task(@strategy_sequentially, job_id, current_priority) do
+    Task
+    |> where(job_id: ^job_id, status: @status_new)
+    |> where([t], t.priority > ^current_priority)
+    |> limit(1)
+    |> order_by(asc: :priority)
+    |> Repo.one()
+  end
+
+  def consumed(%Task{} = entity), do: update_task(entity, %{status: @status_consumed})
+  def pending(%Task{} = entity), do: update_task(entity, %{status: @status_pending})
+  def aborted(%Task{} = entity), do: update_task(entity, %{status: @status_aborted})
+
+  def processed(%Job{} = entity), do: update_job(entity, %{status: @status_processed})
+
+  def processed(%Task{} = entity, result) when is_map(result) do
+    update_task(entity, %{
       result: result,
       status: @status_processed
     })
   end
 
-  def processed(job, result), do: processed(job, %{success: inspect(result)})
+  def processed(entity, result), do: processed(entity, %{success: inspect(result)})
 
-  def failed(job, result) when is_map(result) do
-    update_job(job, %{
+  def failed(%Job{} = entity), do: update_job(entity, %{status: @status_failed})
+
+  def failed(%Task{} = entity, result) when is_map(result) do
+    update_task(entity, %{
       result: result,
       status: @status_failed
     })
   end
 
-  def failed(job, result), do: failed(job, %{error: inspect(result)})
+  def failed(entity, result), do: failed(entity, %{error: inspect(result)})
 
-  def rescued(job, result) do
-    update_job(job, %{
+  def rescued(entity, result) do
+    update_job(entity, %{
       result: %{error: inspect(result)},
       status: @status_rescued
     })

@@ -33,14 +33,14 @@ defmodule Core.Kafka.TaskProcessor do
   end
 
   def consume(value) do
-    Logger.warn(fn -> "unknown kafka message: `#{inspect(value)}`" end)
+    Logger.warn(fn -> "Unknown kafka message: `#{inspect(value)}`" end)
     :ok
   end
 
   def handle_messages(messages) do
     for %{offset: offset, value: task_id} <- messages do
-      Logger.debug(fn -> "task id: " <> inspect(task_id) end)
-      Logger.debug(fn -> "offset: #{offset}" end)
+      Logger.debug(fn -> "Task id: " <> inspect(task_id) end)
+      Logger.debug(fn -> "Offset: #{offset}" end)
       :ok = consume(task_id)
     end
 
@@ -51,7 +51,7 @@ defmodule Core.Kafka.TaskProcessor do
   defp call_rpc(%Task{} = task) do
     case apply(@rpc_client, :run, Tuple.to_list(task.callback)) do
       {:ok, :ok} ->
-        {:ok, nil}
+        {:ok, :ok}
 
       {:ok, result} ->
         result

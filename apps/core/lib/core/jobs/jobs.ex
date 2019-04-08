@@ -12,14 +12,21 @@ defmodule Core.Jobs do
   @status_pending Job.status(:pending)
   @status_processed Job.status(:processed)
   @status_failed Job.status(:failed)
-  @status_rescued Job.status(:rescued)
   @status_new Task.status(:new)
   @status_consumed Task.status(:consumed)
   @status_aborted Task.status(:aborted)
+  @status_rescued Task.status(:rescued)
 
   @strategy_sequentially Job.strategy(:sequentially)
 
-  def get_by(params), do: Repo.get_by(Job, params)
+  def get_job_by(params), do: Repo.get_by(Job, params)
+
+  def get_job_by(params, :preload) do
+    Job
+    |> where(^params)
+    |> preload(:tasks)
+    |> Repo.one()
+  end
 
   def get_task_by(params), do: Repo.get_by(Task, params)
 
@@ -31,7 +38,7 @@ defmodule Core.Jobs do
   end
 
   def fetch_by(params) do
-    case get_by(params) do
+    case get_job_by(params) do
       %Job{} = job -> {:ok, job}
       nil -> {:error, {:not_found, "Job not found"}}
     end
@@ -83,9 +90,26 @@ defmodule Core.Jobs do
     |> Repo.one()
   end
 
+  def abort_new_tasks(job_id) do
+    Task
+    |> where(job_id: ^job_id, status: @status_new)
+    |> Repo.update_all(set: [status: @status_aborted])
+  end
+
+  # task statuses
+
   def consumed(%Task{} = entity), do: update_task(entity, %{status: @status_consumed})
   def pending(%Task{} = entity), do: update_task(entity, %{status: @status_pending})
   def aborted(%Task{} = entity), do: update_task(entity, %{status: @status_aborted})
+
+  def rescued(%Task{} = entity, result) do
+    update_task(entity, %{
+      result: %{error: inspect(result)},
+      status: @status_rescued
+    })
+  end
+
+  # processed
 
   def processed(%Job{} = entity), do: update_job(entity, %{status: @status_processed})
 
@@ -98,6 +122,8 @@ defmodule Core.Jobs do
 
   def processed(entity, result), do: processed(entity, %{success: inspect(result)})
 
+  # failed
+
   def failed(%Job{} = entity), do: update_job(entity, %{status: @status_failed})
 
   def failed(%Task{} = entity, result) when is_map(result) do
@@ -108,11 +134,4 @@ defmodule Core.Jobs do
   end
 
   def failed(entity, result), do: failed(entity, %{error: inspect(result)})
-
-  def rescued(entity, result) do
-    update_job(entity, %{
-      result: %{error: inspect(result)},
-      status: @status_rescued
-    })
-  end
 end

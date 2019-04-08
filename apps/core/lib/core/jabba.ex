@@ -85,13 +85,17 @@ defmodule Jabba do
         Jobs.processed(job)
 
       %Task{} = task ->
-        @kafka_producer.publish_task(task.id)
-        Jobs.pending(task)
+        with {:ok, _} <- Jobs.pending(task),
+             :ok <- @kafka_producer.publish_task(task.id) do
+          :ok
+        end
     end
   end
 
-  def proceed(%Task{status: status, job: %Job{strategy: @strategy_sequentially} = job} = task)
+  def proceed(%Task{status: status, job: %Job{strategy: @strategy_sequentially} = job})
       when status in @statuses_failed do
+    Jobs.abort_new_tasks(job.id)
+    Jobs.failed(job)
   end
 
   defp options(overrides), do: Keyword.merge(@defaults, overrides)

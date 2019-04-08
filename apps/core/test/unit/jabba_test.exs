@@ -15,7 +15,7 @@ defmodule Core.JabbaTest do
 
       assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test")
 
-      assert %Job{} = job = Jobs.get_by(id: id)
+      assert %Job{} = job = Jobs.get_job_by(id: id)
       assert "test" == job.type
       assert Job.status(:pending) == job.status
     end
@@ -27,7 +27,7 @@ defmodule Core.JabbaTest do
       opts = [meta: %{request_id: request_id}, name: "with-meta"]
       assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test", opts)
 
-      assert %Job{} = job = Jobs.get_by(id: id)
+      assert %Job{} = job = Jobs.get_job_by(id: id)
       assert "with-meta" == job.name
       assert "test" == job.type
       assert Job.status(:pending) == job.status
@@ -100,11 +100,15 @@ defmodule Core.JabbaTest do
 
       assert {:ok, %Job{id: id}} = Jabba.run(callback, "deactivate-le", opts)
 
-      assert %Job{} = job = Jobs.get_by(id: id)
+      assert %Job{} = job = Jobs.get_job_by([id: id], :preload)
       assert "with many tasks" == job.name
       assert "deactivate-le" == job.type
-      assert Job.status(:pending) == job.status
+      assert Job.status(:processed) == job.status
       assert %{"request_id" => request_id} == job.meta
+
+      Enum.each(job.tasks, fn task ->
+        assert Job.status(:processed) == task.status
+      end)
     end
   end
 end

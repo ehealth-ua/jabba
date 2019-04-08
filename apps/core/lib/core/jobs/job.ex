@@ -9,7 +9,6 @@ defmodule Core.Job do
   @status_pending "PENDING"
   @status_processed "PROCESSED"
   @status_failed "FAILED"
-  @status_rescued "RESCUED"
 
   @strategy_sequentially "SEQUENTIALLY"
 
@@ -40,12 +39,11 @@ defmodule Core.Job do
     |> validate_inclusion(:strategy, strategies())
   end
 
-  def statuses, do: [@status_pending, @status_processed, @status_failed, @status_rescued]
+  def statuses, do: [@status_pending, @status_processed, @status_failed]
 
   def status(:pending), do: @status_pending
   def status(:processed), do: @status_processed
   def status(:failed), do: @status_failed
-  def status(:rescued), do: @status_rescued
 
   def strategies, do: [@strategy_sequentially]
 

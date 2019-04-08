@@ -17,11 +17,22 @@ defmodule Core.Factory do
     }
   end
 
+  def with_tasks(job), do: with_tasks(job, 1)
+
+  def with_tasks(job, args) when is_list(args), do: with_tasks(job, 1, args)
+
+  def with_tasks(job, n, args \\ []) do
+    tasks = insert_list(n, :task, [job: job] ++ args)
+    %{job | tasks: tasks}
+  end
+
   def task_factory do
     %Task{
       callback: {"test", TestRPC, :run, []},
-      status: Job.status(:pending),
+      job: build(:job),
+      priority: String.to_integer(sequence(:priority, &"#{&1}")),
       result: %{},
+      status: Task.status(:new),
       ended_at: nil
     }
   end

@@ -8,7 +8,7 @@ defmodule RPCTest do
 
   describe "create job with sequentially process strategy" do
     test "successfully with empty meta" do
-      expect(KafkaMock, :publish_job, fn _ -> :ok end)
+      expect(KafkaMock, :publish_task, fn _ -> :ok end)
 
       {:ok, %Job{}} = RPC.create_job(@test_callback, "test")
     end

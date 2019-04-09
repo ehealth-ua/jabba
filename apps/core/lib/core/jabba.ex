@@ -26,33 +26,36 @@ defmodule Jabba do
 
   @type callback() :: {binary, atom, atom, list}
 
-  @spec run(callback, binary, list) :: {:ok, binary} | {:error, term}
-  def run(callback, type, opts \\ []) when is_list(opts) do
+  def run(tasks, type, opts \\ [])
+
+  @spec run(list(callback), binary, list) :: {:ok, binary} | {:error, term}
+  def run(tasks, type, opts) when is_list(tasks) and is_list(opts) do
     opts = options(opts)
 
-    with {:ok, job} <- create_job(callback, type, opts),
+    with {:ok, job} <- create_job(tasks, type, opts),
          :ok <- publish_job_task(job) do
       {:ok, job}
     end
   end
 
-  defp create_job(callback, type, opts) do
+  @spec run(callback, binary, list) :: {:ok, binary} | {:error, term}
+  def run(task, type, opts) when is_map(task), do: run([task], type, opts)
+
+  defp create_job(tasks, type, opts) do
     Jobs.create_job(%{
       name: opts[:name],
       type: type,
       meta: opts[:meta],
       strategy: opts[:strategy],
       status: @status_pending,
-      tasks: prepare_tasks(callback, opts[:strategy])
+      tasks: prepare_tasks(tasks, opts[:strategy])
     })
   end
 
-  defp prepare_tasks(callback, strategy) when is_tuple(callback), do: prepare_tasks([callback], strategy)
-
-  defp prepare_tasks(callbacks, @strategy_sequentially) when is_list(callbacks) do
-    callbacks
-    |> Enum.map_reduce(1, fn callback, acc ->
-      {%{callback: callback, priority: acc}, acc + 1}
+  defp prepare_tasks(tasks, @strategy_sequentially) when is_list(tasks) do
+    tasks
+    |> Enum.map_reduce(1, fn task, acc ->
+      {task |> Map.take(~w(callback name)a) |> Map.put(:priority, acc), acc + 1}
     end)
     |> elem(0)
   end

@@ -5,6 +5,7 @@ defmodule Core.Repo.Migrations.CreateTask do
     create table(:tasks, primary_key: false) do
       add(:id, :uuid, primary_key: true)
       add(:callback, :binary, null: false)
+      add(:name, :text)
       add(:priority, :smallint, null: false, default: 0)
       add(:result, :map)
       add(:status, :text, null: false)

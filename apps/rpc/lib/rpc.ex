@@ -24,10 +24,14 @@ defmodule Jabba.RPC do
   Jabba just a job manager and stores result of callback with meta data.
   Jobs logic is on the side of the caller
 
-  The first argument is the `callback` is being invoked. It is called when message consumed from Kafka.
-  The result of the `callback` must return:
+  The first argument is list of `tasks` or one `task` map.
+  Task is a map with two atom fields:
+  * `:callback` - the callback is being invoked. It is called when message consumed from Kafka.
+    The result of the `callback` must return:
     * `{:ok, map}` or `:ok`  - in case of success
     * `{:error, map}` - in case of error
+
+  * `:name` (optional) - name of the task
 
   The second argument defines a job `type` and could be used as a filter for jobs searching
 

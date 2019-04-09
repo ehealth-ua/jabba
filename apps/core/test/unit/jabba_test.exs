@@ -7,13 +7,16 @@ defmodule Core.JabbaTest do
   alias Core.Jobs
   alias Ecto.UUID
 
-  @test_callback {"test", Test, :run, [:some, %{arguments: "for"}, [:callback]]}
+  @task %{
+    name: "test task",
+    callback: {"test", Test, :run, [:some, %{arguments: "for"}, [:callback]]}
+  }
 
   describe "create job with sequentially process strategy" do
     test "successfully with empty meta" do
       expect(KafkaMock, :publish_task, fn _ -> :ok end)
 
-      assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test")
+      assert {:ok, %Job{id: id}} = Jabba.run(@task, "test")
 
       assert %Job{} = job = Jobs.get_job_by(id: id)
       assert "test" == job.type
@@ -25,7 +28,7 @@ defmodule Core.JabbaTest do
       request_id = UUID.generate()
 
       opts = [meta: %{request_id: request_id}, name: "with-meta"]
-      assert {:ok, %Job{id: id}} = Jabba.run(@test_callback, "test", opts)
+      assert {:ok, %Job{id: id}} = Jabba.run(@task, "test", opts)
 
       assert %Job{} = job = Jobs.get_job_by(id: id)
       assert "with-meta" == job.name
@@ -35,12 +38,12 @@ defmodule Core.JabbaTest do
     end
 
     test "with invalid meta type" do
-      Jabba.run(@test_callback, "test", meta: "invalid type")
+      Jabba.run(@task, "test", meta: "invalid type")
     end
 
     test "successfully with many tasks and consume" do
       request_id = UUID.generate()
-      legal_entity_id = UUID.generate()
+      id = UUID.generate()
 
       expect(KafkaMock, :publish_task, fn task_id ->
         task = Jobs.get_task_by(id: task_id)
@@ -76,7 +79,7 @@ defmodule Core.JabbaTest do
         assert "mpi" == basename
         assert Test == module
         assert :deactivate_employee == function
-        assert [%{legal_entity_id: legal_entity_id}] == arguments
+        assert [%{legal_entity_id: id}] == arguments
 
         {:ok, {:ok, :deactivated}}
       end)
@@ -92,13 +95,13 @@ defmodule Core.JabbaTest do
 
       opts = [meta: %{request_id: request_id}, name: "with many tasks"]
 
-      callback = [
-        {"ehealth", Test, :deactivate_division, [{11.2222, 22.3333}]},
-        {"mpi", Test, :deactivate_employee, [%{legal_entity_id: legal_entity_id}]},
-        {"ops", Test, :deactivate_declarations, [[code: "AB2211II"]]}
+      tasks = [
+        %{name: "Deactivate division", callback: {"ehealth", Test, :deactivate_division, [{11.2222, 22.3333}]}},
+        %{name: "Deactivate employee", callback: {"mpi", Test, :deactivate_employee, [%{legal_entity_id: id}]}},
+        %{name: "Deactivate declarations", callback: {"ops", Test, :deactivate_declarations, [[code: "AB2211II"]]}}
       ]
 
-      assert {:ok, %Job{id: id}} = Jabba.run(callback, "deactivate-le", opts)
+      assert {:ok, %Job{id: id}} = Jabba.run(tasks, "deactivate-le", opts)
 
       assert %Job{} = job = Jobs.get_job_by([id: id], :preload)
       assert "with many tasks" == job.name

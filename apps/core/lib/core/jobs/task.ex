@@ -18,9 +18,10 @@ defmodule Core.Task do
   @primary_key {:id, UUID, autogenerate: true}
   schema "tasks" do
     field(:callback, RPCCallback)
+    field(:name, :string)
     field(:priority, :integer)
-    field(:status, :string, default: @status_new)
     field(:result, :map)
+    field(:status, :string, default: @status_new)
     field(:ended_at, :utc_datetime_usec)
 
     belongs_to(:job, Job, type: UUID)

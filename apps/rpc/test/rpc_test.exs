@@ -10,7 +10,7 @@ defmodule RPCTest do
     test "successfully with empty meta" do
       expect(KafkaMock, :publish_task, fn _ -> :ok end)
 
-      {:ok, %Job{}} = RPC.create_job(@test_callback, "test")
+      {:ok, %Job{}} = RPC.create_job(%{callback: @test_callback, name: "name"}, "test")
     end
 
     test "successfully with one task" do

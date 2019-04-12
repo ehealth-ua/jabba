@@ -12,12 +12,6 @@ defmodule RPCTest do
 
       {:ok, %Job{}} = RPC.create_job(%{callback: @test_callback, name: "name"}, "test")
     end
-
-    test "successfully with one task" do
-    end
-
-    test "successfully with many tasks" do
-    end
   end
 
   describe "search jobs" do
@@ -29,6 +23,19 @@ defmodule RPCTest do
       assert {:ok, jobs} = RPC.search_jobs([{:type, :equal, "terminate"}], [desc: :inserted_at], {0, 10})
       assert is_list(jobs)
       assert 5 == length(jobs)
+      assert job.id == hd(jobs).id
+    end
+
+    test "success with filter be meta" do
+      request_id = UUID.generate()
+      job = insert(:job, type: "terminate", meta: %{"request_id" => request_id})
+      insert(:job, type: "deactivate", meta: %{"request_id" => request_id})
+      insert(:job, type: "terminate", meta: %{"request_id" => "123"})
+
+      filter = [{:meta, nil, [{:request_id, :equal, request_id}]}, {:type, :equal, "terminate"}]
+      assert {:ok, jobs} = RPC.search_jobs(filter, [desc: :inserted_at], {0, 10})
+      assert is_list(jobs)
+      assert 1 == length(jobs)
       assert job.id == hd(jobs).id
     end
 

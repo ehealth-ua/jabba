@@ -122,7 +122,5 @@ defmodule Jabba.RPC do
     end
   end
 
-  defp render(job), do: put_started_at(Map.take(job, Job.__schema__(:fields)))
-
-  defp put_started_at(%{inserted_at: inserted_at} = job), do: Map.put(job, :started_at, inserted_at)
+  defp render(job), do: Map.take(job, Job.__schema__(:fields))
 end

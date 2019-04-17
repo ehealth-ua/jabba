@@ -51,7 +51,7 @@ defmodule RPCTest do
     end
 
     test "not found" do
-      assert {:error, {:not_found, "Job not found"}} = RPC.get_job(UUID.generate())
+      refute RPC.get_job(UUID.generate())
     end
   end
 end

@@ -1,10 +1,24 @@
 defmodule Core.Job do
-  @moduledoc false
+  @moduledoc """
+  Job schema
+  """
 
   use Ecto.Schema
   import Ecto.Changeset
   alias Core.Task
   alias Ecto.UUID
+
+  @type t :: %{
+          id: binary,
+          type: binary,
+          status: binary,
+          callback: RPCCallback.t(),
+          meta: map,
+          result: map,
+          ended_at: DateTime,
+          inserted_at: DateTime,
+          updated_at: DateTime
+        }
 
   @status_pending "PENDING"
   @status_processed "PROCESSED"

@@ -7,6 +7,7 @@ defmodule Jabba do
   alias Core.Job
   alias Core.Jobs
   alias Core.Task
+  alias Core.Ecto.RPCCallback
 
   require Logger
 
@@ -24,11 +25,9 @@ defmodule Jabba do
     name: nil
   ]
 
-  @type callback() :: {binary, atom, atom, list}
-
   def run(tasks, type, opts \\ [])
 
-  @spec run(list(callback), binary, list) :: {:ok, binary} | {:error, term}
+  @spec run(list(RPCCallback.t()), binary, list) :: {:ok, binary} | {:error, term}
   def run(tasks, type, opts) when is_list(tasks) and is_list(opts) do
     opts = options(opts)
 
@@ -38,7 +37,7 @@ defmodule Jabba do
     end
   end
 
-  @spec run(callback, binary, list) :: {:ok, binary} | {:error, term}
+  @spec run(RPCCallback.t(), binary, list) :: {:ok, binary} | {:error, term}
   def run(task, type, opts) when is_map(task), do: run([task], type, opts)
 
   defp create_job(tasks, type, opts) do

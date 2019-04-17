@@ -37,21 +37,22 @@ defmodule Core.Jobs do
     |> Repo.one()
   end
 
-  def fetch_by(params) do
+  def fetch_job_by(params) do
     case get_job_by(params) do
       %Job{} = job -> {:ok, job}
-      nil -> {:error, {:not_found, "Job not found"}}
+      err -> err
     end
   end
 
   def fetch_task_by(params) do
     case get_task_by(params) do
       %Task{} = job -> {:ok, job}
-      nil -> {:error, {:not_found, "Task not found"}}
+      err -> err
     end
   end
 
-  @spec search_jobs(list | [], list | [], {offset :: integer, limit :: integer} | nil) :: {:ok, term}
+  @spec search_jobs(filter :: list | [], order_by :: list | [], cursor :: {offset :: integer, limit :: integer} | nil) ::
+          {:ok, Job.t() | nil}
   def search_jobs(filter \\ [], order_by \\ [], cursor \\ nil) do
     jobs =
       Job

@@ -5,6 +5,8 @@ defmodule Core.Ecto.RPCCallback do
 
   @behaviour Ecto.Type
 
+  @type t :: {binary, atom, atom, list}
+
   defguard is_callback(callback)
            when is_tuple(callback) and tuple_size(callback) == 4 and is_binary(elem(callback, 0)) and
                   is_atom(elem(callback, 1)) and is_atom(elem(callback, 2)) and is_list(elem(callback, 3))

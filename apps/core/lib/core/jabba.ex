@@ -4,10 +4,10 @@ defmodule Jabba do
   Module that creates and process jobs.
   """
 
+  alias Core.Ecto.RPCCallback
   alias Core.Job
   alias Core.Jobs
   alias Core.Task
-  alias Core.Ecto.RPCCallback
 
   require Logger
 

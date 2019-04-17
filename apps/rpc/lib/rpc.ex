@@ -3,9 +3,9 @@ defmodule Jabba.RPC do
   This module contains functions that are called from other pods via RPC.
   """
 
+  alias Core.Ecto.RPCCallback
   alias Core.Job
   alias Core.Jobs
-  alias Core.Ecto.RPCCallback
 
   @doc """
   Creates a new asynchronous job, which will be stored in PostgreSQL and processed through Kafka.

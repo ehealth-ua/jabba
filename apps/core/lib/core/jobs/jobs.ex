@@ -51,8 +51,7 @@ defmodule Core.Jobs do
     end
   end
 
-  @spec search_jobs(filter :: list | [], order_by :: list | [], cursor :: {offset :: integer, limit :: integer} | nil) ::
-          {:ok, Job.t() | nil}
+  @spec search_jobs(list | [], list | [], {offset :: integer, limit :: integer} | nil) :: {:ok, Job.t() | nil}
   def search_jobs(filter \\ [], order_by \\ [], cursor \\ nil) do
     jobs =
       Job

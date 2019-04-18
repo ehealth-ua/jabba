@@ -14,7 +14,7 @@ environment :default do
   )
 end
 
-release :rpc do
+release :jabba_rpc do
   set(pre_start_hooks: "bin/hooks/")
   set(version: current_version(:rpc))
 

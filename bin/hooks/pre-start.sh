@@ -1,6 +1,6 @@
 #!/bin/sh
 # `pwd` should be /opt/rpc
-APP_NAME="rpc"
+APP_NAME="jabba-rpc"
 
 if [ "${DB_MIGRATE}" == "true" ]; then
   echo "[WARNING] Migrating database!"

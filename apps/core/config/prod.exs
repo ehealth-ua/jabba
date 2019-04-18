@@ -9,6 +9,14 @@ config :core, Core.Repo,
   pool_size: {:system, :integer, "POOL_SIZE", 10},
   timeout: :infinity
 
+config :core,
+  kaffe_consumer: [
+    endpoints: {:system, :string, "KAFKA_BROKERS"},
+    topics: ["jobs"],
+    consumer_group: "jobs_group",
+    message_handler: Core.Kafka.TaskProcessor
+  ]
+
 config :kaffe,
   producer: [
     endpoints: {:system, :string, "KAFKA_BROKERS"},

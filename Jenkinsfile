@@ -70,7 +70,7 @@ pipeline {
             timeout(activity: true, time: 3)
           }
           environment {
-            APPS='[{"app":"rpc","chart":"jabba","namespace":"jabba","deployment":"rpc", "label":"rpc"}]'
+            APPS='[{"app":"jabba-rpc","chart":"jabba","namespace":"jabba","deployment":"jabba-rpc", "label":"jabba-rpc"}]'
           }
           steps {
             sh '''
@@ -87,7 +87,7 @@ pipeline {
         timeout(activity: true, time: 3)
       }
       environment {
-        APPS='[{"app":"rpc","chart":"jabba","namespace":"jabba","deployment":"rpc", "label":"rpc"}]'
+        APPS='[{"app":"jabba-rpc","chart":"jabba","namespace":"jabba","deployment":"jabba-rpc", "label":"jabba-rpc"}]'
       }
       steps {
         sh '''
@@ -110,7 +110,7 @@ pipeline {
         timeout(activity: true, time: 3)
       }
       environment {
-        APPS='[{"app":"rpc","chart":"jabba","namespace":"jabba","deployment":"rpc", "label":"rpc"}]'
+        APPS='[{"app":"jabba-rpc","chart":"jabba","namespace":"jabba","deployment":"jabba-rpc", "label":"jabba-rpc"}]'
       }
       steps {
         withCredentials([string(credentialsId: '86a8df0b-edef-418f-844a-cd1fa2cf813d', variable: 'GITHUB_TOKEN')]) {

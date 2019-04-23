@@ -41,6 +41,7 @@ defmodule Core.MixProject do
       {:ecto, "~> 3.1"},
       {:ecto_filter, git: "https://github.com/edenlabllc/ecto_filter", branch: "ecto_3"},
       {:ecto_sql, "~> 3.1"},
+      {:ehealth_logger, git: "https://github.com/edenlabllc/ehealth_logger.git"},
       {:jason, "~> 1.1"},
       {:kaffe, "~> 1.11"},
       {:kube_rpc, "~> 0.1.0"},

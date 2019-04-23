@@ -15,6 +15,14 @@ config :core,
     message_handler: Core.Kafka.TaskProcessor
   ]
 
+config :logger_json, :backend,
+  formatter: EhealthLogger.Formatter,
+  metadata: :all
+
+config :logger,
+       backends: [LoggerJSON],
+       level: :info
+
 config :kaffe,
   producer: [
     endpoints: [localhost: 9092],

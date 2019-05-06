@@ -20,8 +20,8 @@ config :logger_json, :backend,
   metadata: :all
 
 config :logger,
-       backends: [LoggerJSON],
-       level: :info
+  backends: [LoggerJSON],
+  level: :info
 
 config :kaffe,
   producer: [

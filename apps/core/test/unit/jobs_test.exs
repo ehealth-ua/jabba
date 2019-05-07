@@ -20,7 +20,7 @@ defmodule Core.JobsTest do
 
       filter = [
         {:type, :equal, "test"},
-        {["merged_from_legal_entity", "edrpou"], :meta, "1234567890"}
+        {:meta, :jsonb, {["merged_from_legal_entity", "edrpou"], "1234567890"}}
       ]
 
       assert {:ok, jobs} = Jobs.search_jobs(filter)
@@ -28,8 +28,8 @@ defmodule Core.JobsTest do
 
       filter = [
         {:type, :equal, "test"},
-        {["merged_from_legal_entity", "edrpou"], :meta, "1234567890"},
-        {["merged_to_legal_entity", "is_active"], :meta, true}
+        {:meta, :jsonb, {["merged_from_legal_entity", "edrpou"], "1234567890"}},
+        {:meta, :jsonb, {["merged_to_legal_entity", "is_active"], true}}
       ]
 
       assert {:ok, jobs} = Jobs.search_jobs(filter)

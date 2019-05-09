@@ -44,7 +44,7 @@ defmodule Core.MixProject do
       {:ehealth_logger, git: "https://github.com/edenlabllc/ehealth_logger.git"},
       {:jason, "~> 1.1"},
       {:kaffe, "~> 1.11"},
-      {:kube_rpc, "~> 0.1.0"},
+      {:kube_rpc, "~> 0.2.0"},
       {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
       {:postgrex, ">= 0.0.0"},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},

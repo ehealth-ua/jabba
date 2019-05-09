@@ -1,4 +1,6 @@
 defmodule RPC.MixProject do
+  @moduledoc false
+
   use Mix.Project
 
   @version "0.1.0"
@@ -29,8 +31,7 @@ defmodule RPC.MixProject do
 
   defp deps do
     [
-      {:core, in_umbrella: true},
-      {:kube_rpc, "~> 0.1.0"}
+      {:core, in_umbrella: true}
     ]
   end
 end

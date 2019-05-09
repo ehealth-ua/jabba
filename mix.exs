@@ -1,4 +1,6 @@
 defmodule Jabba.MixProject do
+  @moduledoc false
+
   use Mix.Project
 
   @version "0.1.0"
@@ -18,6 +20,7 @@ defmodule Jabba.MixProject do
     [
       {:distillery, "~> 2.0", runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test]},
+      {:git_ops, "~> 0.6.0", only: [:dev]},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test]}
     ]

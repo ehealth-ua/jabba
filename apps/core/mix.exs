@@ -39,7 +39,7 @@ defmodule Core.MixProject do
       {:confex_config_provider, "~> 0.1.0"},
       {:confex, "~> 3.4"},
       {:ecto, "~> 3.1"},
-      {:ecto_filter, git: "https://github.com/edenlabllc/ecto_filter", branch: "ecto_3"},
+      {:ecto_filter, git: "https://github.com/edenlabllc/ecto_filter", branch: "master"},
       {:ecto_sql, "~> 3.1"},
       {:ehealth_logger, git: "https://github.com/edenlabllc/ehealth_logger.git"},
       {:jason, "~> 1.1"},

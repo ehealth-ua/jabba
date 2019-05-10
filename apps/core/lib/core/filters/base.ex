@@ -5,8 +5,8 @@ defmodule Core.Filters.Base do
   use EctoFilter.Operators.JSON
 
   # ToDo: hardcoded for meta with two embed objects. Must be parsed dynamically
-  def apply(query, {field, :jsonb, {[first_object_field, second_object_field], value}}, _, _) do
-    where(query, [j], fragment("?->?->? = ?", field(j, ^field), ^first_object_field, ^second_object_field, ^value))
+  def apply(query, {field, :jsonb, value}, _, _) do
+    where(query, [j], fragment("? @> ?", field(j, ^field), ^value))
   end
 
   def apply(query, operation, type, context), do: super(query, operation, type, context)

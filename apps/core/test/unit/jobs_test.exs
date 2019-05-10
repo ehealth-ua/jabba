@@ -2,7 +2,6 @@ defmodule Core.JobsTest do
   @moduledoc false
 
   use Core.ModelCase
-  alias Core.Job
   alias Core.Jobs
 
   describe "search jobs" do
@@ -10,26 +9,44 @@ defmodule Core.JobsTest do
       insert(:job, meta: %{merged_from_legal_entity: %{edrpou: "0987654321"}})
       insert(:job, meta: %{merged_from_legal_entity: %{edrpou: "1234567890"}})
 
+      insert(:job,
+        meta: %{
+          merged_from_legal_entity: %{edrpou: "1234567890", is_active: false},
+          merged_to_legal_entity: %{is_active: true}
+        }
+      )
+
       %{id: id} =
         insert(:job,
           meta: %{
-            merged_from_legal_entity: %{edrpou: "1234567890"},
+            merged_from_legal_entity: %{edrpou: "1234567890", is_active: true},
             merged_to_legal_entity: %{is_active: true}
           }
         )
 
+      jsonb = %{"merged_from_legal_entity" => %{"edrpou" => "1234567890"}}
+
       filter = [
         {:type, :equal, "test"},
-        {:meta, :jsonb, {["merged_from_legal_entity", "edrpou"], "1234567890"}}
+        {:meta, :jsonb, jsonb}
       ]
 
       assert {:ok, jobs} = Jobs.search_jobs(filter)
-      assert 2 == length(jobs)
+      assert 3 == length(jobs)
+
+      jsonb = %{
+        "merged_from_legal_entity" => %{
+          "edrpou" => "1234567890",
+          "is_active" => true
+        },
+        "merged_to_legal_entity" => %{
+          "is_active" => true
+        }
+      }
 
       filter = [
         {:type, :equal, "test"},
-        {:meta, :jsonb, {["merged_from_legal_entity", "edrpou"], "1234567890"}},
-        {:meta, :jsonb, {["merged_to_legal_entity", "is_active"], true}}
+        {:meta, :jsonb, jsonb}
       ]
 
       assert {:ok, jobs} = Jobs.search_jobs(filter)

@@ -24,7 +24,7 @@ defmodule Core.JobsTest do
           }
         )
 
-      jsonb = %{"merged_from_legal_entity" => %{"edrpou" => "1234567890"}}
+      jsonb = %{merged_from_legal_entity: %{edrpou: "1234567890"}}
 
       filter = [
         {:type, :equal, "test"},
@@ -35,12 +35,12 @@ defmodule Core.JobsTest do
       assert 3 == length(jobs)
 
       jsonb = %{
-        "merged_from_legal_entity" => %{
-          "edrpou" => "1234567890",
-          "is_active" => true
+        merged_from_legal_entity: %{
+          edrpou: "1234567890",
+          is_active: true
         },
-        "merged_to_legal_entity" => %{
-          "is_active" => true
+        merged_to_legal_entity: %{
+          is_active: true
         }
       }
 

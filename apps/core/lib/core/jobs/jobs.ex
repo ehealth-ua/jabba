@@ -53,6 +53,8 @@ defmodule Core.Jobs do
 
   @spec search_jobs(list | [], list | [], {offset :: integer, limit :: integer} | nil) :: {:ok, Job.t() | nil}
   def search_jobs(filter \\ [], order_by \\ [], cursor \\ nil) do
+    order_by = prepare_order_by(order_by)
+
     jobs =
       Job
       |> BaseFilter.filter(filter)
@@ -62,6 +64,13 @@ defmodule Core.Jobs do
 
     {:ok, jobs}
   end
+
+  # crooked nail. Should be removed
+  # ToDo: use inserted_at instead of started_at
+  defp prepare_order_by([]), do: []
+  defp prepare_order_by(asc: :started_at), do: [asc: :inserted_at]
+  defp prepare_order_by(desc: :started_at), do: [desc: :inserted_at]
+  defp prepare_order_by(order_by), do: order_by
 
   def create_job(data) do
     %Job{}

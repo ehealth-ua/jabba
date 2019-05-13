@@ -10,11 +10,11 @@ defmodule Core.Job do
 
   @type t :: %{
           id: binary,
+          name: binary,
           type: binary,
           status: binary,
-          callback: RPCCallback.t(),
+          strategy: binary,
           meta: map,
-          result: map,
           ended_at: DateTime,
           inserted_at: DateTime,
           updated_at: DateTime

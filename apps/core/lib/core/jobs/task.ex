@@ -7,6 +7,19 @@ defmodule Core.Task do
   alias Core.Job
   alias Ecto.UUID
 
+  @type t :: %{
+          id: binary,
+          job_id: Ecto.UUID.t(),
+          callback: RPCCallback.t(),
+          name: binary,
+          priority: integer,
+          result: map,
+          status: binary,
+          ended_at: DateTime,
+          inserted_at: DateTime,
+          updated_at: DateTime
+        }
+
   @status_new "NEW"
   @status_pending "PENDING"
   @status_consumed "CONSUMED"

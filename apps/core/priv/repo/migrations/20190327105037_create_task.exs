@@ -10,9 +10,9 @@ defmodule Core.Repo.Migrations.CreateTask do
       add(:result, :map)
       add(:status, :text, null: false)
       add(:job_id, references(:jobs, type: :uuid, on_delete: :restrict))
-      add(:ended_at, :utc_datetime)
+      add(:ended_at, :utc_datetime_usec)
 
-      timestamps(type: :utc_datetime)
+      timestamps(type: :utc_datetime_usec)
     end
   end
 end

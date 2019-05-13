@@ -26,7 +26,7 @@ defmodule Core.Kafka.TaskProcessor do
         Logger.warn(fn -> "Task with id `#{task_id}` not found" end)
 
       {:process_rpc, {:error, error}} ->
-        Logger.warn(fn -> "Task with id `#{task_id}` cannot be processed because of #{error}" end)
+        Logger.warn(fn -> "Task with id `#{task_id}` cannot be processed because of #{inspect(error)}" end)
     end
 
     :ok

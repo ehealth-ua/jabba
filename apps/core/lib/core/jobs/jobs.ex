@@ -120,12 +120,21 @@ defmodule Core.Jobs do
 
   # processed
 
-  def processed(%Job{} = entity), do: update_job(entity, %{status: @status_processed})
+  def processed(%Job{} = entity) do
+    update_job(
+      entity,
+      %{
+        status: @status_processed,
+        ended_at: DateTime.utc_now()
+      }
+    )
+  end
 
   def processed(%Task{} = entity, result) when is_map(result) do
     update_task(entity, %{
       result: result,
-      status: @status_processed
+      status: @status_processed,
+      ended_at: DateTime.utc_now()
     })
   end
 

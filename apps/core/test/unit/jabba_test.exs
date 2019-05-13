@@ -107,10 +107,16 @@ defmodule Core.JabbaTest do
       assert "with many tasks" == job.name
       assert "deactivate-le" == job.type
       assert Job.status(:processed) == job.status
+      assert job.ended_at
       assert %{"request_id" => request_id} == job.meta
+
+      # tasks
+      assert is_list(job.tasks)
+      assert 3 = length(job.tasks)
 
       Enum.each(job.tasks, fn task ->
         assert Job.status(:processed) == task.status
+        assert task.ended_at
       end)
     end
   end

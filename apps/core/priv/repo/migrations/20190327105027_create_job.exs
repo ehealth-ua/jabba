@@ -9,9 +9,9 @@ defmodule Core.Repo.Migrations.CreateJob do
       add(:strategy, :text, null: false)
       add(:status, :text, null: false)
       add(:meta, :map)
-      add(:ended_at, :utc_datetime)
+      add(:ended_at, :utc_datetime_usec)
 
-      timestamps(type: :utc_datetime)
+      timestamps(type: :utc_datetime_usec)
     end
   end
 end

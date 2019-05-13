@@ -16,9 +16,9 @@ defmodule RPCTest do
 
   describe "search jobs" do
     test "success with filter params" do
-      job = insert(:job, type: "terminate")
-      insert_list(2, :job, type: "deactivate")
       insert_list(4, :job, type: "terminate")
+      insert_list(2, :job, type: "deactivate")
+      job = insert(:job, type: "terminate")
 
       assert {:ok, jobs} = RPC.search_jobs([{:type, :equal, "terminate"}], [desc: :inserted_at], {0, 10})
       assert is_list(jobs)

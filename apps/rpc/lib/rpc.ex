@@ -57,10 +57,11 @@ defmodule Jabba.RPC do
       )
       {:ok, %{
         id: "6868d53f-6e37-46bc-af34-29e650446310",
+        name: "Job name",
         type: "deactivate_legal_entity",
         status: "PENDING",
+        strategy: "SEQUENTIALLY",
         meta: %{},
-        result: %{},
         ended_at: #DateTime<2019-02-04 14:08:42.434612Z>,
         inserted_at: #DateTime<2019-02-04 14:08:42.434612Z>,
         updated_at: #DateTime<2019-02-04 14:08:42.434619Z>
@@ -76,10 +77,11 @@ defmodule Jabba.RPC do
       iex> Jabba.RPC.get_job()
       {:ok, %{
         id: "6868d53f-6e37-46bc-af34-29e650446310",
+        name: "Job name",
         type: "deactivate_legal_entity",
         status: "PROCESSED",
+        strategy: "SEQUENTIALLY",
         meta: %{},
-        result: %{},
         ended_at: #DateTime<2019-02-04 14:08:42.434612Z>,
         inserted_at: #DateTime<2019-02-04 14:08:42.434612Z>,
         updated_at: #DateTime<2019-02-04 14:08:42.434619Z>
@@ -108,10 +110,11 @@ defmodule Jabba.RPC do
       iex> Jabba.RPC.search_jobs([{:status, :equal, "PROCESSED"}], [desc: :status], {0, 10})
       {:ok, [%{
         id: "6868d53f-6e37-46bc-af34-29e650446310",
+        name: "Job name",
         type: "deactivate_legal_entity",
         status: "PROCESSED",
+        strategy: "SEQUENTIALLY",
         meta: %{},
-        result: %{},
         ended_at: #DateTime<2019-02-04 14:08:42.434612Z>,
         inserted_at: #DateTime<2019-02-04 14:08:42.434612Z>,
         updated_at: #DateTime<2019-02-04 14:08:42.434619Z>
@@ -121,6 +124,40 @@ defmodule Jabba.RPC do
   def search_jobs(filter \\ [], order_by \\ [], cursor \\ nil) do
     with {:ok, jobs} <- Jobs.search_jobs(filter, order_by, cursor) do
       {:ok, Enum.map(jobs, &render/1)}
+    end
+  end
+
+  @doc """
+  Search for Tasks
+  Check available formats for filter here https://github.com/edenlabllc/ecto_filter
+
+  Available parameters:
+
+  | Parameter           | Type                          | Example                                                       |
+  | :-----------------: | :---------------------------: | :-----------------------------------------------------------: |
+  | filter              | `list`                        | `[{:job_id, :equal, "53a8d53f-4e37-26bc-cf34-29e65044bb3a"}]` |
+  | order_by            | `list`                        | `[asc: :inserted_at]` or `[desc: :status]`                    |
+  | cursor              | `{integer, integer}` or `nil` | `{0, 10}`                                                     |
+
+  ## Examples
+      iex> Jabba.RPC.search_tasks([{:job_id, :equal, "53a8d53f-4e37-26bc-cf34-29e65044bb3a"}], [desc: :status], {0, 10})
+      {:ok, [%{
+        id: "6868d53f-6e37-46bc-af34-29e650446310",
+        job_id: "53a8d53f-4e37-26bc-cf34-29e65044bb3a",
+        callback: {"test", TestRPC, :run, []}",
+        name: "Some task name",
+        priority: 0,
+        result: %{},
+        status: "PROCESSED",
+        ended_at: #DateTime<2019-02-04 14:08:42.434612Z>,
+        inserted_at: #DateTime<2019-02-04 14:08:42.434612Z>,
+        updated_at: #DateTime<2019-02-04 14:08:42.434619Z>
+      }]}
+  """
+  @spec search_tasks(list | [], list | [], {offset :: integer, limit :: integer} | nil) :: {:ok, list(Job.t())}
+  def search_tasks(filter \\ [], order_by \\ [], cursor \\ nil) do
+    with {:ok, tasks} <- Jobs.search_tasks(filter, order_by, cursor) do
+      {:ok, Enum.map(tasks, &render/1)}
     end
   end
 end

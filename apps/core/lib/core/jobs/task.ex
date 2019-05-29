@@ -32,7 +32,7 @@ defmodule Core.Task do
   schema "tasks" do
     field(:callback, RPCCallback)
     field(:name, :string)
-    field(:priority, :integer)
+    field(:priority, :integer, default: 0)
     field(:result, :map)
     field(:status, :string, default: @status_new)
     field(:ended_at, :utc_datetime_usec)

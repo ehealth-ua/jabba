@@ -25,10 +25,6 @@ defmodule RPCTest do
       assert is_list(jobs)
       assert 5 == length(jobs)
       assert job.id == hd(jobs).id
-
-      Enum.each(jobs, fn job ->
-        assert Map.has_key?(job, :tasks)
-      end)
     end
 
     test "success with filter be meta" do
@@ -57,6 +53,22 @@ defmodule RPCTest do
 
     test "not found" do
       refute RPC.get_job(UUID.generate())
+    end
+  end
+
+  describe "get tasks" do
+    test "search job tasks filtered by job.id" do
+      terminate_job = insert(:job, type: "terminate")
+      insert_list(3, :task, job: terminate_job)
+      job = insert(:job, type: "merge")
+      insert_list(5, :task, job: job)
+
+      assert {:ok, tasks} = RPC.search_tasks([{:job_id, :equal, job.id}], [desc: :inserted_at], {0, 10})
+      assert 5 == length(tasks)
+
+      Enum.each(tasks, fn task ->
+        assert job.id == task.job_id
+      end)
     end
   end
 end

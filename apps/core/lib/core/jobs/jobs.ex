@@ -52,19 +52,22 @@ defmodule Core.Jobs do
   end
 
   @spec search_jobs(list | [], list | [], {offset :: integer, limit :: integer} | nil) :: {:ok, Job.t() | nil}
-  def search_jobs(filter \\ [], order_by \\ [], cursor \\ nil) do
+  def search_jobs(filter \\ [], order_by \\ [], cursor \\ nil), do: search(Job, filter, order_by, cursor)
+
+  @spec search_tasks(list | [], list | [], {offset :: integer, limit :: integer} | nil) :: {:ok, Task.t() | nil}
+  def search_tasks(filter \\ [], order_by \\ [], cursor \\ nil), do: search(Task, filter, order_by, cursor)
+
+  defp search(entity, filter, order_by, cursor) do
     order_by = prepare_order_by(order_by)
 
-    jobs =
-      Job
+    entities =
+      entity
       |> BaseFilter.filter(filter)
       |> apply_cursor(cursor)
       |> order_by(^order_by)
-      |> join(:left, [j], t in assoc(j, :tasks))
-      |> preload([..., t], tasks: t)
       |> Repo.all()
 
-    {:ok, jobs}
+    {:ok, entities}
   end
 
   # crooked nail. Should be removed

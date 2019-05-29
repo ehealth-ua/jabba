@@ -19,11 +19,16 @@ defmodule RPCTest do
       insert_list(4, :job, type: "terminate")
       insert_list(2, :job, type: "deactivate")
       job = insert(:job, type: "terminate")
+      insert(:task, job: job)
 
       assert {:ok, jobs} = RPC.search_jobs([{:type, :equal, "terminate"}], [desc: :inserted_at], {0, 10})
       assert is_list(jobs)
       assert 5 == length(jobs)
       assert job.id == hd(jobs).id
+
+      Enum.each(jobs, fn job ->
+        assert Map.has_key?(job, :tasks)
+      end)
     end
 
     test "success with filter be meta" do

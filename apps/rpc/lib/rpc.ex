@@ -3,6 +3,8 @@ defmodule Jabba.RPC do
   This module contains functions that are called from other pods via RPC.
   """
 
+  import Jabba.RPC.View, only: [render: 1]
+
   alias Core.Ecto.RPCCallback
   alias Core.Job
   alias Core.Jobs
@@ -121,6 +123,4 @@ defmodule Jabba.RPC do
       {:ok, Enum.map(jobs, &render/1)}
     end
   end
-
-  defp render(job), do: Map.take(job, Job.__schema__(:fields))
 end

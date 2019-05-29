@@ -60,6 +60,8 @@ defmodule Core.Jobs do
       |> BaseFilter.filter(filter)
       |> apply_cursor(cursor)
       |> order_by(^order_by)
+      |> join(:left, [j], t in assoc(j, :tasks))
+      |> preload([..., t], tasks: t)
       |> Repo.all()
 
     {:ok, jobs}

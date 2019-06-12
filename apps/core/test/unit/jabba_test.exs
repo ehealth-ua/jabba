@@ -7,6 +7,7 @@ defmodule Core.JabbaTest do
   alias Core.Jobs
   alias Ecto.UUID
 
+  @strategy_concurrent Job.strategy(:concurrent)
   @task %{
     name: "test task",
     callback: {"test", Test, :run, [:some, %{arguments: "for"}, [:callback]]}
@@ -109,6 +110,88 @@ defmodule Core.JabbaTest do
       assert Job.status(:processed) == job.status
       assert job.ended_at
       assert %{"request_id" => request_id} == job.meta
+
+      # tasks
+      assert is_list(job.tasks)
+      assert 3 = length(job.tasks)
+
+      Enum.each(job.tasks, fn task ->
+        assert Job.status(:processed) == task.status
+        assert task.ended_at
+      end)
+    end
+  end
+
+  describe "create job with concurrent process strategy" do
+    test "successfully with callback" do
+      id = UUID.generate()
+
+      expect(KafkaMock, :publish_tasks, fn tasks ->
+        Enum.each(tasks, fn task_id ->
+          task = Jobs.get_task_by(id: task_id)
+          assert 0 == task.priority
+          TaskProcessor.consume(task_id)
+        end)
+
+        :ok
+      end)
+
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "ehealth" == basename
+        assert Test == module
+        assert :deactivate_division == function
+        assert [{11.2222, 22.3333}] == arguments
+
+        {:ok, {:ok, :deactivated}}
+      end)
+
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "mpi" == basename
+        assert Test == module
+        assert :deactivate_employee == function
+        assert [%{legal_entity_id: id}] == arguments
+
+        {:ok, {:ok, :deactivated}}
+      end)
+
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "ops" == basename
+        assert Test == module
+        assert :deactivate_declarations == function
+        assert [[code: "AB2211II"]] == arguments
+
+        {:ok, :ok}
+      end)
+
+      expect(RPCClientMock, :run, fn basename, module, function, arguments ->
+        assert "ehealth" == basename
+        assert Test == module
+        assert :job_processed == function
+        assert [%{some: "arg"}, %{job_id: _, status: "PROCESSED"}] = arguments
+
+        {:ok, :ok}
+      end)
+
+      opts = [
+        name: "Concurrent job",
+        strategy: @strategy_concurrent,
+        callback: {"ehealth", Test, :job_processed, [%{some: "arg"}]}
+      ]
+
+      tasks = [
+        %{name: "Deactivate division", callback: {"ehealth", Test, :deactivate_division, [{11.2222, 22.3333}]}},
+        %{name: "Deactivate employee", callback: {"mpi", Test, :deactivate_employee, [%{legal_entity_id: id}]}},
+        %{name: "Deactivate declarations", callback: {"ops", Test, :deactivate_declarations, [[code: "AB2211II"]]}}
+      ]
+
+      assert {:ok, %Job{id: id}} = Jabba.run(tasks, "deactivate-le", opts)
+
+      assert %Job{} = job = Jobs.get_job_by([id: id], :preload)
+      assert "Concurrent job" == job.name
+      assert "deactivate-le" == job.type
+      assert Job.status(:processed) == job.status
+      assert job.ended_at
+      refute job.meta
 
       # tasks
       assert is_list(job.tasks)

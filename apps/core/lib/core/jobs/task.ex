@@ -43,7 +43,7 @@ defmodule Core.Task do
   end
 
   @required ~w(callback)a
-  @optional ~w(priority result status ended_at)a
+  @optional ~w(name priority result status ended_at)a
 
   def changeset(%__MODULE__{} = task, params) do
     task

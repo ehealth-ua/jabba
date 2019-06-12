@@ -18,6 +18,7 @@ defmodule Core.Jobs do
   @status_rescued Task.status(:rescued)
 
   @strategy_sequentially Job.strategy(:sequentially)
+  @strategy_concurrent Job.strategy(:concurrent)
 
   def get_job_by(params), do: Repo.get_by(Job, params)
 
@@ -104,6 +105,19 @@ defmodule Core.Jobs do
     |> Repo.one()
   end
 
+  def has_tasks_in_process?(@strategy_concurrent, job_id) do
+    statuses = [@status_new, @status_pending, @status_consumed]
+
+    pending_tasks =
+      Task
+      |> where(job_id: ^job_id)
+      |> where([t], t.status in ^statuses)
+      |> select([t], count(t.id))
+      |> Repo.one()
+
+    0 < pending_tasks
+  end
+
   def abort_new_tasks(job_id) do
     Task
     |> where(job_id: ^job_id, status: @status_new)
@@ -112,9 +126,21 @@ defmodule Core.Jobs do
 
   # task statuses
 
+  def aborted(%Task{} = entity), do: update_task(entity, %{status: @status_aborted})
   def consumed(%Task{} = entity), do: update_task(entity, %{status: @status_consumed})
   def pending(%Task{} = entity), do: update_task(entity, %{status: @status_pending})
-  def aborted(%Task{} = entity), do: update_task(entity, %{status: @status_aborted})
+
+  def pending_tasks(ids) when is_list(ids) do
+    tasks_amount = length(ids)
+
+    Task
+    |> where([t], t.id in ^ids)
+    |> Repo.update_all(set: [status: @status_pending])
+    |> case do
+      {^tasks_amount, nil} -> :ok
+      _ -> {:error, "Tasks status was not updated to `#{@status_pending}`"}
+    end
+  end
 
   def rescued(%Task{} = entity, result) do
     update_task(entity, %{

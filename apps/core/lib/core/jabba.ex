@@ -4,9 +4,12 @@ defmodule Jabba do
   Module that creates and process jobs.
   """
 
+  import Core.Ecto.RPCCallback, only: [is_callback: 1]
+
   alias Core.Ecto.RPCCallback
   alias Core.Job
   alias Core.Jobs
+  alias Core.RPC.Client, as: RPC
   alias Core.Task
 
   require Logger
@@ -16,6 +19,7 @@ defmodule Jabba do
   @statuses_failed Task.statuses(:failed)
 
   @strategy_sequentially Job.strategy(:sequentially)
+  @strategy_concurrent Job.strategy(:concurrent)
 
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
@@ -32,7 +36,7 @@ defmodule Jabba do
     opts = options(opts)
 
     with {:ok, job} <- create_job(tasks, type, opts),
-         :ok <- publish_job_task(job) do
+         :ok <- publish_job_tasks(job) do
       {:ok, job}
     end
   end
@@ -45,6 +49,7 @@ defmodule Jabba do
       name: opts[:name],
       type: type,
       meta: opts[:meta],
+      callback: opts[:callback],
       strategy: opts[:strategy],
       status: @status_pending,
       tasks: prepare_tasks(tasks, opts[:strategy])
@@ -59,7 +64,9 @@ defmodule Jabba do
     |> elem(0)
   end
 
-  defp publish_job_task(%Job{strategy: @strategy_sequentially} = job) do
+  defp prepare_tasks(tasks, @strategy_concurrent), do: tasks
+
+  defp publish_job_tasks(%Job{strategy: @strategy_sequentially} = job) do
     with %{id: id} = task <- Enum.find(job.tasks, fn task -> task.priority == 1 end),
          {:ok, _} <- Jobs.pending(task),
          :ok <- @kafka_producer.publish_task(id) do
@@ -74,6 +81,17 @@ defmodule Jabba do
     end
   end
 
+  defp publish_job_tasks(%Job{strategy: @strategy_concurrent} = job) do
+    ids = Enum.map(job.tasks, &Map.get(&1, :id))
+
+    with :ok <- Jobs.pending_tasks(ids),
+         :ok <- @kafka_producer.publish_tasks(ids) do
+      :ok
+    else
+      err -> prepare_error(err)
+    end
+  end
+
   defp prepare_error({:error, reason} = err) do
     Logger.error("Cannot publish task with: `#{inspect(reason)}`")
     err
@@ -84,7 +102,7 @@ defmodule Jabba do
   def proceed(%Task{status: @status_processed, job: %Job{strategy: @strategy_sequentially} = job} = task) do
     case Jobs.get_next_task(job.strategy, job.id, task.priority) do
       nil ->
-        Jobs.processed(job)
+        job |> Jobs.processed() |> call_job_rpc()
 
       %Task{} = task ->
         with {:ok, _} <- Jobs.pending(task),
@@ -97,8 +115,29 @@ defmodule Jabba do
   def proceed(%Task{status: status, job: %Job{strategy: @strategy_sequentially} = job})
       when status in @statuses_failed do
     Jobs.abort_new_tasks(job.id)
-    Jobs.failed(job)
+    job |> Jobs.failed() |> call_job_rpc()
   end
+
+  def proceed(%Task{status: @status_processed, job: %Job{strategy: @strategy_concurrent} = job}) do
+    case Jobs.has_tasks_in_process?(job.strategy, job.id) do
+      false -> job |> Jobs.processed() |> call_job_rpc()
+      true -> :ok
+    end
+  end
+
+  def proceed(%Task{status: status, job: %Job{strategy: @strategy_concurrent} = job})
+      when status in @statuses_failed do
+    job |> Jobs.failed() |> call_job_rpc()
+  end
+
+  defp call_job_rpc(%Job{callback: callback} = job) when is_callback(callback) do
+    {basename, module, function, arguments} = callback
+    arguments = List.insert_at(arguments, -1, %{job_id: job.id, status: job.status})
+
+    RPC.safe_callback({basename, module, function, arguments})
+  end
+
+  defp call_job_rpc(_), do: :ok
 
   defp options(overrides), do: Keyword.merge(@defaults, overrides)
 end

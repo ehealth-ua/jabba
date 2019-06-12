@@ -4,11 +4,10 @@ defmodule Core.Kafka.TaskProcessor do
   """
 
   alias Core.Jobs
+  alias Core.RPC.Client, as: RPC
   alias Core.Task
 
   require Logger
-
-  @rpc_client Application.get_env(:core, :rpc_client)
 
   @status_pending Task.status(:pending)
 
@@ -48,21 +47,7 @@ defmodule Core.Kafka.TaskProcessor do
     :ok
   end
 
-  defp call_rpc(%Task{} = task) do
-    case apply(@rpc_client, :run, Tuple.to_list(task.callback)) do
-      {:ok, :ok} ->
-        {:ok, :ok}
-
-      {:ok, result} ->
-        result
-
-      err ->
-        Logger.warn(fn -> "Invalid RPC call with: `#{inspect(err)}`" end)
-        err
-    end
-  rescue
-    err -> {:rescued, err}
-  end
+  defp call_rpc(%Task{callback: callback}), do: RPC.safe_callback(callback)
 
   defp process_rpc_result(task, {:ok, result}), do: Jobs.processed(task, result)
   defp process_rpc_result(task, {:error, error}), do: Jobs.failed(task, error)

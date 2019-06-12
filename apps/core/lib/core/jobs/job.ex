@@ -5,6 +5,7 @@ defmodule Core.Job do
 
   use Ecto.Schema
   import Ecto.Changeset
+  alias Core.Ecto.RPCCallback
   alias Core.Task
   alias Ecto.UUID
 
@@ -14,6 +15,7 @@ defmodule Core.Job do
           type: binary,
           status: binary,
           strategy: binary,
+          callback: RPCCallback.t(),
           meta: map,
           ended_at: DateTime,
           inserted_at: DateTime,
@@ -24,6 +26,7 @@ defmodule Core.Job do
   @status_processed "PROCESSED"
   @status_failed "FAILED"
 
+  @strategy_concurrent "CONCURRENT"
   @strategy_sequentially "SEQUENTIALLY"
 
   @primary_key {:id, UUID, autogenerate: true}
@@ -32,6 +35,7 @@ defmodule Core.Job do
     field(:type, :string)
     field(:strategy, :string)
     field(:status, :string, default: @status_pending)
+    field(:callback, RPCCallback, default: nil)
     field(:meta, :map)
     field(:ended_at, :utc_datetime_usec)
 
@@ -41,7 +45,7 @@ defmodule Core.Job do
   end
 
   @required ~w(type strategy)a
-  @optional ~w(name meta status ended_at)a
+  @optional ~w(callback name meta status ended_at)a
 
   def changeset(%__MODULE__{} = job, params) do
     job
@@ -59,7 +63,8 @@ defmodule Core.Job do
   def status(:processed), do: @status_processed
   def status(:failed), do: @status_failed
 
-  def strategies, do: [@strategy_sequentially]
+  def strategies, do: [@strategy_concurrent, @strategy_sequentially]
 
+  def strategy(:concurrent), do: @strategy_concurrent
   def strategy(:sequentially), do: @strategy_sequentially
 end

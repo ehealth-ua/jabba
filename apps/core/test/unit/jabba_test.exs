@@ -167,7 +167,11 @@ defmodule Core.JabbaTest do
         assert "ehealth" == basename
         assert Test == module
         assert :job_processed == function
-        assert [%{some: "arg"}, %{job_id: _, status: "PROCESSED"}] = arguments
+        assert [%{some: "arg"}, job_additional_arg] = arguments
+
+        Enum.each(~w(job_id status meta)a, fn field ->
+          assert Map.has_key?(job_additional_arg, field)
+        end)
 
         {:ok, :ok}
       end)

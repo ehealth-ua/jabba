@@ -132,7 +132,7 @@ defmodule Jabba do
 
   defp call_job_rpc(%Job{callback: callback} = job) when is_callback(callback) do
     {basename, module, function, arguments} = callback
-    arguments = List.insert_at(arguments, -1, %{job_id: job.id, status: job.status})
+    arguments = List.insert_at(arguments, -1, %{job_id: job.id, status: job.status, meta: job.meta})
 
     RPC.safe_callback({basename, module, function, arguments})
   end
